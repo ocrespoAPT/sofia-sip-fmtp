@@ -1870,7 +1870,7 @@ int sdp_rtpmap_match(sdp_rtpmap_t const *a, sdp_rtpmap_t const *b)
 char* removeSpaces(const char* source)
 {
 	int i,j = 0;
-	char *output = "";
+	char *output = source;
 	for (i = 0; i<strlen(source); i++)
 	{
 		if (source[i]!=' '){
@@ -1883,22 +1883,23 @@ char* removeSpaces(const char* source)
 	return output;
 }
 
-#include "su_debug.h"
 int sdp_cmp_fmtp(const char *lftmp, const char *rftmp){
-	SU_DEBUG_0(("Entering on sdp_cmp_fmtp with %s and %s \n",lftmp,rftmp));
+	//fprintf(stderr,"Entering on sdp_cmp_fmtp with %s and %s \n",lftmp,rftmp);
 
     if (su_casematch(lftmp, rftmp)){
-    	SU_DEBUG_0(("both are the same \n"));
+    	fprintf(stderr,"both are the same \n");
     	return 1;
     }
     if(lftmp == NULL || rftmp == NULL){
     	return 0;
     }
 
-    SU_DEBUG_0(("trying without space \n"));
 
     char *l_fmtp = removeSpaces(lftmp);
 	char *r_ftmp = removeSpaces(rftmp);
+
+    fprintf(stderr,"trying without space %s with %s\n",l_fmtp,r_ftmp);
+
 
 	return su_casematch(lftmp, rftmp);
 }
@@ -1918,6 +1919,8 @@ sdp_rtpmap_t *sdp_rtpmap_find_matching(sdp_rtpmap_t const *list,
 {
   char const *lparam, *rparam;
 
+  int check_fmtp = 0;
+
   if (rm == NULL)
     return NULL;
 
@@ -1930,23 +1933,30 @@ sdp_rtpmap_t *sdp_rtpmap_find_matching(sdp_rtpmap_t const *list,
 
     lparam = rm->rm_params; rparam = list->rm_params;
 
-    if (lparam == rparam)
-      break;
-
-    if (!lparam) lparam = "1"; if (!rparam) rparam = "1";
-    if (!su_casematch(lparam, rparam))
-      continue;
-
-
-    if(su_casematch(rm->rm_encoding,"MP4A") || su_casematch(rm->rm_encoding,"mp4-generic")){
-        break;
+    if (lparam == rparam){
+      	check_fmtp = 1;
     }
-    else{
-		if(!sdp_cmp_fmtp(rm->rm_fmtp,list->rm_fmtp)){
-			continue;
+	else{
+		if (!lparam) lparam = "1"; if (!rparam) rparam = "1";
+		if (!su_casematch(lparam, rparam))
+		  continue;
+		else
+			check_fmtp = 1;
+	}
+
+    if(check_fmtp){
+		if(su_casematch(rm->rm_encoding,"MP4A") || su_casematch(rm->rm_encoding,"mp4-generic")){
+			break;
 		}
 		else{
-			break;
+			if(!sdp_cmp_fmtp(rm->rm_fmtp,list->rm_fmtp)){
+				fprintf(stderr,"fmtp not the same \n");
+				continue;
+			}
+			else{
+				fprintf(stderr,"fmtp the same!!!!! \n");
+				break;
+			}
 		}
     }
 

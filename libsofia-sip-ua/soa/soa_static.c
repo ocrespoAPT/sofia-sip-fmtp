@@ -1095,6 +1095,7 @@ static int offer_answer_step(soa_session_t *ss,
 			     enum offer_answer_action action,
 			     char const *by)
 {
+
   soa_static_session_t *sss = (soa_static_session_t *)ss;
 
   sdp_session_t *local = ss->ss_local->ssd_sdp;
@@ -1198,6 +1199,7 @@ static int offer_answer_step(soa_session_t *ss,
 	*local0 = *local, local = local0;
       SU_DEBUG_7(("soa_static(%p, %s): %s\n", (void *)ss, by,
 		  "upgrade with remote description"));
+
       if (soa_sdp_upgrade(ss, tmphome, local, user, remote, &u2s, &s2u) < 0)
 	goto internal_error;
     }
