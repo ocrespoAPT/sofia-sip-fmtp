@@ -63,7 +63,7 @@ const unsigned sdp_struct_align_ = sizeof(void *) - STRUCT_ALIGN_;
 
 
 #define STRUCT_DUP(p, dst, src) \
-  ASSERT_STRUCT_ALIGN(p);						\
+  ASSERT_STRUCT_ALIGN(p); assert(*(int*)(src) >= (int)sizeof(*src));	\
   ((*(int*)(src) >= (int)sizeof(*src)					\
     ? (dst = memcpy((p), (src), sizeof(*src)))				\
     : (dst = memcpy((p), (src), *(int*)(src))),				\
@@ -1190,7 +1190,7 @@ int sdp_session_cmp(sdp_session_t const *a, sdp_session_t const *b)
   for (ab = a->sdp_bandwidths, bb = b->sdp_bandwidths;
        ab || bb;
        ab = ab->b_next, bb = bb->b_next)
-    if ((rv = sdp_bandwidth_cmp(ab, bb)))
+    if ((rv = sdp_bandwidth_cmp(a->sdp_bandwidths, b->sdp_bandwidths)))
       return rv;
 
   if ((rv = sdp_time_cmp(a->sdp_time, b->sdp_time)))
@@ -1199,7 +1199,7 @@ int sdp_session_cmp(sdp_session_t const *a, sdp_session_t const *b)
     return rv;
 
   for (aa = a->sdp_attributes, ba = b->sdp_attributes;
-       aa || ba;
+       aa || bb;
        aa = aa->a_next, ba = ba->a_next)
     if ((rv = sdp_attribute_cmp(aa, ba)))
       return rv;
@@ -1497,14 +1497,14 @@ int sdp_media_cmp(sdp_media_t const *a, sdp_media_t const *b)
   for (ab = a->m_bandwidths, bb = b->m_bandwidths;
        ab || bb;
        ab = ab->b_next, bb = bb->b_next)
-    if ((rv = sdp_bandwidth_cmp(ab, bb)))
+    if ((rv = sdp_bandwidth_cmp(a->m_bandwidths, b->m_bandwidths)))
       return rv;
 
   if ((rv = sdp_key_cmp(a->m_key, b->m_key)))
     return rv;
 
   for (aa = a->m_attributes, ba = b->m_attributes;
-       aa || ba;
+       aa || bb;
        aa = aa->a_next, ba = ba->a_next)
     if ((rv = sdp_attribute_cmp(aa, ba)))
       return rv;
@@ -1866,6 +1866,44 @@ int sdp_rtpmap_match(sdp_rtpmap_t const *a, sdp_rtpmap_t const *b)
   return 1;
 }
 
+
+char* removeSpaces(const char* source)
+{
+	int i,j = 0;
+	char *output = "";
+	for (i = 0; i<strlen(source); i++)
+	{
+		if (source[i]!=' '){
+			output[j]=source[i];
+			++j;
+		}
+
+	}
+	output[j]='\0';
+	return output;
+}
+
+#include "su_debug.h"
+int sdp_cmp_fmtp(const char *lftmp, const char *rftmp){
+	SU_DEBUG_0(("Entering on sdp_cmp_fmtp with %s and %s \n",lftmp,rftmp));
+
+    if (su_casematch(lftmp, rftmp)){
+    	SU_DEBUG_0(("both are the same \n"));
+    	return 1;
+    }
+    if(lftmp == NULL || rftmp == NULL){
+    	return 0;
+    }
+
+    SU_DEBUG_0(("trying without space \n"));
+
+    char *l_fmtp = removeSpaces(lftmp);
+	char *r_ftmp = removeSpaces(rftmp);
+
+	return su_casematch(lftmp, rftmp);
+}
+
+
 /** Search for matching a rtpmap entry from list.
  *
  * @note
@@ -1898,6 +1936,19 @@ sdp_rtpmap_t *sdp_rtpmap_find_matching(sdp_rtpmap_t const *list,
     if (!lparam) lparam = "1"; if (!rparam) rparam = "1";
     if (!su_casematch(lparam, rparam))
       continue;
+
+
+    if(su_casematch(rm->rm_encoding,"MP4A") || su_casematch(rm->rm_encoding,"mp4-generic")){
+        break;
+    }
+    else{
+		if(!sdp_cmp_fmtp(rm->rm_fmtp,list->rm_fmtp)){
+			continue;
+		}
+		else{
+			break;
+		}
+    }
 
     break;
   }
