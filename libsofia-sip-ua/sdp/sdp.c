@@ -1912,7 +1912,6 @@ int sdp_cmp_fmtp_aptx(const char *lftmp, const char *rftmp){
     }
 
 
-
 }
 
 

@@ -533,35 +533,31 @@ char* su_removeSpaces(const char* source)
 	return output;
 }
 
-#include <stdio.h>
 
 void su_stringTokenizeHash(const char* str,const char* delimiters,struct su_str_token** hash){
 
-	char* cpy_str = malloc(strlen(str));
+	char* cpy_str = malloc(sizeof(char) * strlen(str));
 	strncpy(cpy_str,str,strlen(str));
 	cpy_str[strlen(str)] = '\0';
 
 	char *token = strtok (cpy_str,delimiters);
 
+	char *key = malloc(sizeof(char) * 25);
+	memset(key,0,sizeof(char) * 25);
+
+	char *value = malloc(sizeof(char) * 25);
+	memset(value,0,sizeof(char) * 25);
+
 	int i  = 0;
 
 	while(token != NULL){
-
-		char *key = malloc(sizeof(char) * 25);
-		memset(key,0,sizeof(char) * 25);
-		char *value = malloc(sizeof(char) * 25);
-		memset(value,0,sizeof(char) * 25);
-
-
 
 		int is_key = 0;
 
 		int pos = 0;
 
 		for (int index = 0; index < strlen(token); ++index){
-			if(token[index] == '\0'){
-				break;
-			}
+
 			if (token[index] == '='){
 				key[pos] = '\0';
 
@@ -579,32 +575,41 @@ void su_stringTokenizeHash(const char* str,const char* delimiters,struct su_str_
 			}
 		}
 
-		if(is_key != 1){
-			free(key);
-			key = NULL;
+		if(is_key == 1){
 
-			free(value);
-			value = NULL;
-		}
-		else{
 			value[pos] = '\0';
 
 			struct su_str_token *str_token = malloc(sizeof(struct su_str_token));
 
-			str_token->key = key;
-			str_token->value = value;
+			str_token->key = malloc(sizeof(char) * strlen(key));
+			strncpy(str_token->key,key,strlen(key));
+			str_token->key[strlen(key)] = '\0';
+
+
+
+			str_token->value = malloc(sizeof(char) * strlen(value));
+			strncpy(str_token->value,value,strlen(value));
+			str_token->value[strlen(value)] = '\0';
+
 
 			HASH_ADD_STR( *hash, key, str_token );
 
 		}
 
+		memset(key,0,strlen(key));
+		memset(value,0,strlen(value));
 
 		++i;
 
 		token = strtok (NULL,delimiters);
 	}
 
+	free(key);
+	key = NULL;
+	free(value);
+	value = NULL;
 	free(cpy_str);
+	cpy_str = NULL;
 
 }
 
