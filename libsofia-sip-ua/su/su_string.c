@@ -37,6 +37,7 @@
 #include <stddef.h>
 #include <limits.h>
 
+
 /** ASCII-case-insensitive substring search.
  *
  * Search for substring ASCII-case-insensitively.
@@ -514,3 +515,97 @@ su_memcspn(const void *mem, size_t memlen,
 
   return i;
 }
+
+
+char* su_removeSpaces(const char* source)
+{
+	int i,j = 0;
+	char *output = source;
+	for (i = 0; i<strlen(source); i++)
+	{
+		if (source[i]!=' '){
+			output[j]=source[i];
+			++j;
+		}
+
+	}
+	output[j]='\0';
+	return output;
+}
+
+#include <stdio.h>
+
+void su_stringTokenizeHash(const char* str,const char* delimiters,struct su_str_token** hash){
+
+	char* cpy_str = malloc(strlen(str));
+	strncpy(cpy_str,str,strlen(str));
+	cpy_str[strlen(str)] = '\0';
+
+	char *token = strtok (cpy_str,delimiters);
+
+	int i  = 0;
+
+	while(token != NULL){
+
+		char *key = malloc(sizeof(char) * 25);
+		memset(key,0,sizeof(char) * 25);
+		char *value = malloc(sizeof(char) * 25);
+		memset(value,0,sizeof(char) * 25);
+
+
+
+		int is_key = 0;
+
+		int pos = 0;
+
+		for (int index = 0; index < strlen(token); ++index){
+			if(token[index] == '\0'){
+				break;
+			}
+			if (token[index] == '='){
+				key[pos] = '\0';
+
+				is_key = 1;
+				pos = 0;
+			}
+			else{
+				if(is_key == 0){
+					key[pos] = token[index];
+				}
+				else{
+					value[pos] = token[index];
+				}
+				++pos;
+			}
+		}
+
+		if(is_key != 1){
+			free(key);
+			key = NULL;
+
+			free(value);
+			value = NULL;
+		}
+		else{
+			value[pos] = '\0';
+
+			struct su_str_token *str_token = malloc(sizeof(struct su_str_token));
+
+			str_token->key = key;
+			str_token->value = value;
+
+			HASH_ADD_STR( *hash, key, str_token );
+
+		}
+
+
+		++i;
+
+		token = strtok (NULL,delimiters);
+	}
+
+	free(cpy_str);
+
+}
+
+

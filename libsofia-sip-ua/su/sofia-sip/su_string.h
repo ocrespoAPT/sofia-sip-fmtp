@@ -50,7 +50,17 @@
 
 #include <string.h>
 
+
+#include "../uthash/uthash.h"
+
+
 SOFIA_BEGIN_DECLS
+
+struct su_str_token {
+	char* key;            // we'll use this field as the key
+    char* value;
+    UT_hash_handle hh; // makes this structure hashable
+};
 
 su_inline int su_strcmp(char const *a, char const *b)
 {
@@ -80,6 +90,11 @@ SOFIAPUBFUN size_t su_memspn(const void *mem, size_t memlen,
 			     const void *accept, size_t acceptlen);
 SOFIAPUBFUN size_t su_memcspn(const void *mem, size_t memlen,
 			      const void *reject, size_t rejectlen);
+
+SOFIAPUBFUN char* su_removeSpaces(const char* source);
+
+SOFIAPUBFUN void su_stringTokenizeHash(const char* str,const char* delimiters,struct su_str_token** hash);
+
 
 SOFIA_END_DECLS
 

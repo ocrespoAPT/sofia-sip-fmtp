@@ -1866,8 +1866,8 @@ int sdp_rtpmap_match(sdp_rtpmap_t const *a, sdp_rtpmap_t const *b)
   return 1;
 }
 
-
-char* removeSpaces(const char* source)
+/*
+char* su_removeSpaces(const char* source)
 {
 	int i,j = 0;
 	char *output = source;
@@ -1882,6 +1882,39 @@ char* removeSpaces(const char* source)
 	output[j]='\0';
 	return output;
 }
+*/
+
+int sdp_cmp_fmtp_aptx(const char *lftmp, const char *rftmp){
+
+	char *l_fmtp = su_removeSpaces(lftmp);
+	char *r_ftmp = su_removeSpaces(rftmp);
+
+	struct su_str_token *l_hash = NULL;
+	struct su_str_token *r_hash = NULL;
+
+
+	su_stringTokenizeHash(l_fmtp,";",&l_hash);
+	su_stringTokenizeHash(r_ftmp,";",&r_hash);
+
+	struct su_str_token *l_value;
+
+    HASH_FIND_STR( l_hash, "variant", l_value);
+    fprintf(stderr,"Tokens! %s = %s\n",l_value->key,l_value->value);
+
+    HASH_FIND_STR( l_hash, "bitresolution", l_value);
+    fprintf(stderr,"Tokens! %s = %s\n",l_value->key,l_value->value);
+
+
+    HASH_FIND_STR( l_hash, "aux", l_value);
+    if(l_value == NULL){
+        fprintf(stderr,"Not found token aux\n");
+
+    }
+
+
+
+}
+
 
 int sdp_cmp_fmtp(const char *lftmp, const char *rftmp){
 	//fprintf(stderr,"Entering on sdp_cmp_fmtp with %s and %s \n",lftmp,rftmp);
@@ -1895,8 +1928,8 @@ int sdp_cmp_fmtp(const char *lftmp, const char *rftmp){
     }
 
 
-    char *l_fmtp = removeSpaces(lftmp);
-	char *r_ftmp = removeSpaces(rftmp);
+    char *l_fmtp = su_removeSpaces(lftmp);
+	char *r_ftmp = su_removeSpaces(rftmp);
 
     fprintf(stderr,"trying without space %s with %s\n",l_fmtp,r_ftmp);
 
@@ -1945,10 +1978,23 @@ sdp_rtpmap_t *sdp_rtpmap_find_matching(sdp_rtpmap_t const *list,
 	}
 
     if(check_fmtp){
+
+		if(sdp_cmp_fmtp(rm->rm_fmtp,list->rm_fmtp)){
+			fprintf(stderr,"fmtp the same!!!!! \n");
+			break;
+		}
+
 		if(su_casematch(rm->rm_encoding,"MP4A") || su_casematch(rm->rm_encoding,"mp4-generic")){
 			break;
 		}
-		else{
+		else if(su_casematch(rm->rm_encoding,"aptx")){
+
+			if(sdp_cmp_fmtp_aptx(rm->rm_fmtp,list->rm_fmtp)){
+				fprintf(stderr,"fmtp the same!!!!! \n");
+				break;
+			}
+		}
+		/*else{
 			if(!sdp_cmp_fmtp(rm->rm_fmtp,list->rm_fmtp)){
 				fprintf(stderr,"fmtp not the same \n");
 				continue;
@@ -1957,7 +2003,7 @@ sdp_rtpmap_t *sdp_rtpmap_find_matching(sdp_rtpmap_t const *list,
 				fprintf(stderr,"fmtp the same!!!!! \n");
 				break;
 			}
-		}
+		}*/
     }
 
     break;
