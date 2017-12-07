@@ -1883,24 +1883,55 @@ void clean_hash(su_str_token_t *hash ){
 	}
 }
 
+int cmp_value_has(const char* key,su_str_token_t *l_hash,su_str_token_t *r_hash){
+	su_str_token_t *l_value;
+	su_str_token_t *r_value;
+
+
+	HASH_FIND_STR( l_hash, key, l_value);
+	HASH_FIND_STR( r_hash, key, r_value);
+
+	return su_casematch(l_value->value, l_value->value);
+}
+
 int sdp_cmp_fmtp_aptx(su_str_token_t *l_hash,su_str_token_t *r_hash){
 
 
+	if(cmp_value_has("variant",l_hash,r_hash)){
+		return 1;
+	}
+
+	if(cmp_value_has("bitresolution",l_hash,r_hash)){
+		return 1;
+	}
+
+	return 0;
+}
+
+int sdp_cmp_fmtp_mpa(su_str_token_t *l_hash,su_str_token_t *r_hash){
+
+
 	su_str_token_t *l_value;
+	su_str_token_t *r_value;
 
-    HASH_FIND_STR( l_hash, "variant", l_value);
-    fprintf(stderr,"Tokens! %s = %s\n",l_value->key,l_value->value);
+	if(cmp_value_has("layer",l_hash,r_hash)){
+		return 1;
+	}
 
-    HASH_FIND_STR( l_hash, "bitresolution", l_value);
-    fprintf(stderr,"Tokens! %s = %s\n",l_value->key,l_value->value);
+	if(cmp_value_has("samplerate",l_hash,r_hash)){
+		return 1;
+	}
+
+	if(cmp_value_has("bitrate",l_hash,r_hash)){
+		return 1;
+	}
+
+	if(cmp_value_has("mode",l_hash,r_hash)){
+		return 1;
+	}
 
 
-   /* HASH_FIND_STR( l_hash, "aux", l_value);
-    if(l_value == NULL){
-        fprintf(stderr,"Not found token aux\n");
-
-    }
-*/
+	return 0;
 }
 
 
@@ -1928,16 +1959,23 @@ int sdp_cmp_fmtp(sdp_rtpmap_t const *lcmp,char *rfmtp,struct su_str_token *r_has
 		else{
 
 			su_stringTokenizeHash(lfmtp,";",&l_hash);
-
-			if(su_casematch(lcmp->rm_encoding,"MP4A") || su_casematch(lcmp->rm_encoding,"mp4-generic")){
-				ret = 1;
-			}
-			else if(su_casematch(lcmp->rm_encoding,"aptx")){
+			if(su_casematch(lcmp->rm_encoding,"aptx")){
 
 				if(sdp_cmp_fmtp_aptx(l_hash,r_hash)){
-					fprintf(stderr,"fmtp the same!!!!! \n");
 					ret = 1;
 				}
+			}
+			else if(su_casematch(lcmp->rm_encoding,"MPA")){
+
+				if(sdp_cmp_fmtp_mpa(l_hash,r_hash)){
+					ret = 1;
+				}
+			}
+			else if(su_casematch(lcmp->rm_encoding,"MP4A")){
+				ret = 0;
+			}
+			else if (su_casematch(lcmp->rm_encoding,"mp4-generic")){
+				ret = 0;
 			}
 			/*else{
 				if(!sdp_cmp_fmtp(rm->rm_fmtp,list->rm_fmtp)){
