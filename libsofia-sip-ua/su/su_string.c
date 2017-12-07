@@ -516,6 +516,20 @@ su_memcspn(const void *mem, size_t memlen,
   return i;
 }
 
+char* su_strcpy(const char* source){
+
+	if(source == NULL){
+		return NULL;
+	}
+
+	char* cpy_str = malloc(sizeof(char) * strlen(source));
+	strncpy(cpy_str,source,strlen(source));
+	cpy_str[strlen(source)] = '\0';
+
+	return cpy_str;
+
+}
+
 
 char* su_removeSpaces(const char* source)
 {
@@ -534,11 +548,9 @@ char* su_removeSpaces(const char* source)
 }
 
 
-void su_stringTokenizeHash(const char* str,const char* delimiters,struct su_str_token** hash){
+void su_stringTokenizeHash(const char* str,const char* delimiters,su_str_token_t** hash){
 
-	char* cpy_str = malloc(sizeof(char) * strlen(str));
-	strncpy(cpy_str,str,strlen(str));
-	cpy_str[strlen(str)] = '\0';
+	char* cpy_str = su_strcpy(str);
 
 	char *token = strtok (cpy_str,delimiters);
 
@@ -579,17 +591,10 @@ void su_stringTokenizeHash(const char* str,const char* delimiters,struct su_str_
 
 			value[pos] = '\0';
 
-			struct su_str_token *str_token = malloc(sizeof(struct su_str_token));
+			su_str_token_t *str_token = malloc(sizeof(su_str_token_t));
 
-			str_token->key = malloc(sizeof(char) * strlen(key));
-			strncpy(str_token->key,key,strlen(key));
-			str_token->key[strlen(key)] = '\0';
-
-
-
-			str_token->value = malloc(sizeof(char) * strlen(value));
-			strncpy(str_token->value,value,strlen(value));
-			str_token->value[strlen(value)] = '\0';
+			str_token->key = su_strcpy(key);
+			str_token->value = su_strcpy(value);
 
 
 			HASH_ADD_STR( *hash, key, str_token );

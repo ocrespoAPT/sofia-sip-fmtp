@@ -1866,37 +1866,27 @@ int sdp_rtpmap_match(sdp_rtpmap_t const *a, sdp_rtpmap_t const *b)
   return 1;
 }
 
-/*
-char* su_removeSpaces(const char* source)
-{
-	int i,j = 0;
-	char *output = source;
-	for (i = 0; i<strlen(source); i++)
-	{
-		if (source[i]!=' '){
-			output[j]=source[i];
-			++j;
-		}
+void clean_hash(su_str_token_t *hash ){
 
+	if(hash == NULL){
+		return;
 	}
-	output[j]='\0';
-	return output;
+
+	struct su_str_token *tmp,*value = NULL;
+
+	 /* free the hash table contents */
+	HASH_ITER(hh, hash, value, tmp) {
+		HASH_DEL(hash, value);
+		free(value->key);
+		free(value->value);
+		free(value);
+	}
 }
-*/
 
-int sdp_cmp_fmtp_aptx(const char *lftmp, const char *rftmp){
-
-	char *l_fmtp = su_removeSpaces(lftmp);
-	char *r_ftmp = su_removeSpaces(rftmp);
-
-	struct su_str_token *l_hash = NULL;
-	struct su_str_token *r_hash = NULL;
+int sdp_cmp_fmtp_aptx(su_str_token_t *l_hash,su_str_token_t *r_hash){
 
 
-	su_stringTokenizeHash(l_fmtp,";",&l_hash);
-	su_stringTokenizeHash(r_ftmp,";",&r_hash);
-
-	struct su_str_token *l_value;
+	su_str_token_t *l_value;
 
     HASH_FIND_STR( l_hash, "variant", l_value);
     fprintf(stderr,"Tokens! %s = %s\n",l_value->key,l_value->value);
@@ -1905,35 +1895,72 @@ int sdp_cmp_fmtp_aptx(const char *lftmp, const char *rftmp){
     fprintf(stderr,"Tokens! %s = %s\n",l_value->key,l_value->value);
 
 
-    HASH_FIND_STR( l_hash, "aux", l_value);
+   /* HASH_FIND_STR( l_hash, "aux", l_value);
     if(l_value == NULL){
         fprintf(stderr,"Not found token aux\n");
 
     }
-
-
+*/
 }
 
 
-int sdp_cmp_fmtp(const char *lftmp, const char *rftmp){
-	//fprintf(stderr,"Entering on sdp_cmp_fmtp with %s and %s \n",lftmp,rftmp);
+int sdp_cmp_fmtp(sdp_rtpmap_t const *lcmp,char *rfmtp,struct su_str_token *r_hash){
 
-    if (su_casematch(lftmp, rftmp)){
+	int ret = 0;
+
+	struct su_str_token *l_hash = NULL;
+
+	char *lfmtp = su_strcpy(lcmp->rm_fmtp);
+
+	if (su_casematch(lfmtp, rfmtp)){
     	fprintf(stderr,"both are the same \n");
-    	return 1;
+    	ret = 1;
     }
-    if(lftmp == NULL || rftmp == NULL){
-    	return 0;
+	else if(lfmtp == NULL || rfmtp == NULL){
+    	ret = 0;
     }
+	else{
+		lfmtp = su_removeSpaces(lfmtp);
 
+		if(su_casematch(lfmtp, rfmtp)){
+			ret = 1;
+		}
+		else{
 
-    char *l_fmtp = su_removeSpaces(lftmp);
-	char *r_ftmp = su_removeSpaces(rftmp);
+			su_stringTokenizeHash(lfmtp,";",&l_hash);
 
-    fprintf(stderr,"trying without space %s with %s\n",l_fmtp,r_ftmp);
+			if(su_casematch(lcmp->rm_encoding,"MP4A") || su_casematch(lcmp->rm_encoding,"mp4-generic")){
+				ret = 1;
+			}
+			else if(su_casematch(lcmp->rm_encoding,"aptx")){
 
+				if(sdp_cmp_fmtp_aptx(l_hash,r_hash)){
+					fprintf(stderr,"fmtp the same!!!!! \n");
+					ret = 1;
+				}
+			}
+			/*else{
+				if(!sdp_cmp_fmtp(rm->rm_fmtp,list->rm_fmtp)){
+					fprintf(stderr,"fmtp not the same \n");
+					continue;
+				}
+				else{
+					fprintf(stderr,"fmtp the same!!!!! \n");
+					break;
+				}
+			}*/
 
-	return su_casematch(lftmp, rftmp);
+			clean_hash(l_hash);
+
+		}
+
+	}
+
+	if(lfmtp){
+		free(lfmtp);
+	}
+
+	return ret;
 }
 
 
@@ -1955,6 +1982,17 @@ sdp_rtpmap_t *sdp_rtpmap_find_matching(sdp_rtpmap_t const *list,
 
   if (rm == NULL)
     return NULL;
+
+
+  struct su_str_token *rm_hash = NULL;
+
+  char *rm_fmtp = su_strcpy(rm->rm_fmtp);
+  if(rm_fmtp){
+	  rm_fmtp = su_removeSpaces(rm_fmtp);
+
+	  su_stringTokenizeHash(rm_fmtp,";",&rm_hash);
+  }
+
 
   for (; list; list = list->rm_next) {
     if (rm->rm_rate != list->rm_rate)
@@ -1978,35 +2016,22 @@ sdp_rtpmap_t *sdp_rtpmap_find_matching(sdp_rtpmap_t const *list,
 
     if(check_fmtp){
 
-		if(sdp_cmp_fmtp(rm->rm_fmtp,list->rm_fmtp)){
+		if(sdp_cmp_fmtp(list,rm_fmtp,rm_hash)){
 			fprintf(stderr,"fmtp the same!!!!! \n");
 			break;
-		}
 
-		if(su_casematch(rm->rm_encoding,"MP4A") || su_casematch(rm->rm_encoding,"mp4-generic")){
-			break;
 		}
-		else if(su_casematch(rm->rm_encoding,"aptx")){
-
-			if(sdp_cmp_fmtp_aptx(rm->rm_fmtp,list->rm_fmtp)){
-				fprintf(stderr,"fmtp the same!!!!! \n");
-				break;
-			}
-		}
-		/*else{
-			if(!sdp_cmp_fmtp(rm->rm_fmtp,list->rm_fmtp)){
-				fprintf(stderr,"fmtp not the same \n");
-				continue;
-			}
-			else{
-				fprintf(stderr,"fmtp the same!!!!! \n");
-				break;
-			}
-		}*/
+		continue;
     }
 
     break;
   }
+
+  if(rm_fmtp){
+	  free(rm_fmtp);
+  }
+
+  clean_hash(rm_hash);
 
   return (sdp_rtpmap_t *)list;
 }
