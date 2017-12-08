@@ -1888,21 +1888,67 @@ void clean_hash(su_str_token_t *hash ){
 }
 
 /**
- * Compare the value in two hash tables. (no case sensitive)
+ * Compare the value in two hash tables. (case sensitive)
  * @param key the key to get the value to compare
  * @param l_hash hash1 to compare
  * @param r_hash has2 to compare
  * @return 1 if are equals, 0 otherwise
  */
 int cmp_value_hash(const char* key,su_str_token_t *l_hash,su_str_token_t *r_hash){
-	su_str_token_t *l_value;
-	su_str_token_t *r_value;
+	su_str_token_t *l_value = NULL;
+	su_str_token_t *r_value = NULL;
 
 
 	HASH_FIND_STR( l_hash, key, l_value);
 	HASH_FIND_STR( r_hash, key, r_value);
 
-	return su_casematch(l_value->value, l_value->value);
+	if(l_value == NULL && r_value == NULL){
+		return 1;
+	}
+	else if(l_value == NULL || r_value == NULL){
+		return 0;
+	}
+
+	return su_strmatch(l_value->value, r_value->value);
+}
+
+/**
+ *  Compare the value in two hash tables if the value "if_value" is present. (case sensitive)
+ * @param key the key to get the value to compare
+ * @param if_value the value needed to make the comparison
+ * @param l_hash hash1 to compare
+ * @param r_hash has2 to compare
+ * @return 1 if are equals, 0 otherwise
+ */
+int cmp_value_hash_if(const char* key,const char* if_value,su_str_token_t *l_hash,su_str_token_t *r_hash){
+
+	su_str_token_t *l_value = NULL;
+	su_str_token_t *r_value = NULL;
+
+
+	HASH_FIND_STR( l_hash, key, l_value);
+	HASH_FIND_STR( r_hash, key, r_value);
+
+	int ret = 0;
+
+	if(l_value == NULL && r_value == NULL){
+		ret = 1;
+	}
+	else if(l_value != NULL && r_value != NULL){
+		ret = su_strmatch(l_value->value, r_value->value);
+	}
+	else if(l_value != NULL){
+		if(!su_strmatch(l_value->value, if_value)){
+			ret = 1;
+		}
+	}
+	else{//r_value != NULL
+		if(!su_strmatch(r_value->value, if_value)){
+			ret = 1;
+		}
+	}
+
+	return ret;
 }
 
 /**
@@ -1926,7 +1972,7 @@ int sdp_cmp_fmtp_aptx(su_str_token_t *l_hash,su_str_token_t *r_hash){
 }
 
 /**
- * Compare the fmtp section in a mpa encode (only the mandatory fields)
+ * Compare the fmtp section in a mpa encode
  * @param l_hash the hash with the fmtp1 to compare
  * @param r_hash the hash with the fmtp2 to compare
  * @return 1 if are equals, 0 otherwise
@@ -1958,6 +2004,78 @@ int sdp_cmp_fmtp_mpa(su_str_token_t *l_hash,su_str_token_t *r_hash){
 }
 
 /**
+ * ompare the fmtp section in a mp4a-latm encode
+ * @param l_hash the hash with the fmtp1 to compare
+ * @param r_hash the hash with the fmtp2 to compare
+ * @return 1 if are equals, 0 otherwise
+ */
+int sdp_cmp_fmtp_mp4a(su_str_token_t *l_hash,su_str_token_t *r_hash){
+
+	su_str_token_t *l_value;
+	su_str_token_t *r_value;
+
+	if(cmp_value_hash("profile-level-id",l_hash,r_hash)){
+		return 1;
+	}
+
+	if(cmp_value_hash("bitrate",l_hash,r_hash)){
+		return 1;
+	}
+
+	if(cmp_value_hash_if("cpresent","0",l_hash,r_hash)){
+		return 1;
+	}
+
+	if(cmp_value_hash("config",l_hash,r_hash)){
+		return 1;
+	}
+
+	if(cmp_value_hash("MPS-profile-level-id",l_hash,r_hash)){
+		return 1;
+	}
+
+	if(cmp_value_hash("object",l_hash,r_hash)){
+		return 1;
+	}
+
+	if(cmp_value_hash_if("SBR-enabled","yes",l_hash,r_hash)){
+		return 1;
+	}
+
+	return 0;
+}
+
+/**
+ * ompare the fmtp section in a mpeg4-generic encode
+ * @param l_hash the hash with the fmtp1 to compare
+ * @param r_hash the hash with the fmtp2 to compare
+ * @return 1 if are equals, 0 otherwise
+ */
+int sdp_cmp_fmtp_mpeg4eneric(su_str_token_t *l_hash,su_str_token_t *r_hash){
+
+	su_str_token_t *l_value;
+	su_str_token_t *r_value;
+
+	if(cmp_value_hash("streamtype",l_hash,r_hash)){
+		return 1;
+	}
+
+	if(cmp_value_hash("profile-level-id",l_hash,r_hash)){
+		return 1;
+	}
+
+	if(cmp_value_hash("config",l_hash,r_hash)){
+		return 1;
+	}
+
+	if(cmp_value_hash("mode",l_hash,r_hash)){
+		return 1;
+	}
+
+	return 0;
+}
+
+/**
  * Compare two fmtp section
  * @param lcmp encode info1 to compare
  * @param rfmtp the fmtp string of the encode2 to compare
@@ -1981,13 +2099,12 @@ int sdp_cmp_fmtp(sdp_rtpmap_t const *lcmp,char *rfmtp,struct su_str_token *r_has
     }
 	else{
 		su_removeSpaces(lfmtp);
+		su_strlower(lfmtp);
 
-		if(su_casematch(lfmtp, rfmtp)){
+		if(su_strmatch(lfmtp, rfmtp)){
 			ret = 1;
 		}
 		else{
-
-			su_strlower(lfmtp);
 
 			su_stringTokenizeHash(lfmtp,";",'=',&l_hash);
 			if(su_casematch(lcmp->rm_encoding,"aptx")){
@@ -2002,22 +2119,16 @@ int sdp_cmp_fmtp(sdp_rtpmap_t const *lcmp,char *rfmtp,struct su_str_token *r_has
 					ret = 1;
 				}
 			}
-			else if(su_casematch(lcmp->rm_encoding,"MP4A")){
-				ret = 0;
-			}
-			else if (su_casematch(lcmp->rm_encoding,"mp4-generic")){
-				ret = 0;
-			}
-			/*else{
-				if(!sdp_cmp_fmtp(rm->rm_fmtp,list->rm_fmtp)){
-					fprintf(stderr,"fmtp not the same \n");
-					continue;
+			else if(su_casematch(lcmp->rm_encoding,"MP4A-LATM/")){
+				if(sdp_cmp_fmtp_mp4a(l_hash,r_hash)){
+					ret = 1;
 				}
-				else{
-					fprintf(stderr,"fmtp the same!!!!! \n");
-					break;
+			}
+			else if (su_casematch(lcmp->rm_encoding,"mpeg4-generic")){
+				if(sdp_cmp_fmtp_mpeg4eneric(l_hash,r_hash)){
+					ret = 1;
 				}
-			}*/
+			}
 
 			clean_hash(l_hash);
 
