@@ -94,9 +94,11 @@ SOFIAPUBFUN size_t su_memcspn(const void *mem, size_t memlen,
 
 SOFIAPUBFUN char* su_strcpy(const char* source);
 
-SOFIAPUBFUN char* su_removeSpaces(const char* source);
+SOFIAPUBFUN void su_strlower(char* str);
 
-SOFIAPUBFUN void su_stringTokenizeHash(const char* str,const char* delimiters,su_str_token_t** hash);
+SOFIAPUBFUN void su_removeSpaces(char* source);
+
+SOFIAPUBFUN void su_stringTokenizeHash(const char* str,const char* delimiters,const char assign,su_str_token_t** hash);
 
 
 SOFIA_END_DECLS

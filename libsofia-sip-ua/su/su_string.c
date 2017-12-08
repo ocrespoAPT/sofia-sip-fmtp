@@ -516,6 +516,11 @@ su_memcspn(const void *mem, size_t memlen,
   return i;
 }
 
+/**
+ * Allocate a new string with the size of "source" and copy the content of "source" into the allocated string
+ * @param source the string where to copy
+ * @return A new allocated string with the content of source (it must be free)
+ */
 char* su_strcpy(const char* source){
 
 	if(source == NULL){
@@ -527,28 +532,51 @@ char* su_strcpy(const char* source){
 	cpy_str[strlen(source)] = '\0';
 
 	return cpy_str;
+}
+
+/**
+ * Convert string to lower case string
+ * @param str the string to convert
+ */
+void su_strlower(char* str){
+
+	int lenght = strlen(str);
+	for(int i = 0 ; i < lenght ; ++i){
+		str[i] = tolower(str[i]);
+	}
 
 }
 
-
-char* su_removeSpaces(const char* source)
+/**
+ * Remove spaces of the given string
+ * @param source the string to remove spaces
+ */
+void su_removeSpaces(char* source)
 {
 	int i,j = 0;
-	char *output = source;
-	for (i = 0; i<strlen(source); i++)
+
+	int lenght = strlen(source);
+	for (i = 0; i<lenght; i++)
 	{
 		if (source[i]!=' '){
-			output[j]=source[i];
+			source[j]=source[i];
 			++j;
 		}
 
 	}
-	output[j]='\0';
-	return output;
+	source[j]='\0';
 }
 
-
-void su_stringTokenizeHash(const char* str,const char* delimiters,su_str_token_t** hash){
+/**
+ * Fill the given Hash structure with the values of the given string (str).
+ *
+ * It splits in token divides by "delimiters". Get the values as key=value being the assigner the char "assign"
+ * @param str the string to get the values
+ * @param delimiters the string that divide each token
+ * @param assign the char that do the assign between key and the value, as key = value
+ * @param hash the hash to fill. I t has to be a valid hash or NULL and the function will create one.
+ */
+void su_stringTokenizeHash(const char* str,const char* delimiters,const char assign,su_str_token_t** hash){
 
 	char* cpy_str = su_strcpy(str);
 
@@ -568,22 +596,26 @@ void su_stringTokenizeHash(const char* str,const char* delimiters,su_str_token_t
 
 		int pos = 0;
 
-		for (int index = 0; index < strlen(token); ++index){
+		int lenght = strlen(token);
 
-			if (token[index] == '='){
+		for (int index = 0; index < lenght; ++index){
+
+			if (token[index] == assign){
 				key[pos] = '\0';
 
 				is_key = 1;
 				pos = 0;
 			}
 			else{
-				if(is_key == 0){
-					key[pos] = token[index];
+				if(token[index] != ' '){
+					if(is_key == 0){
+						key[pos] = token[index];
+					}
+					else{
+						value[pos] = token[index];
+					}
+					++pos;
 				}
-				else{
-					value[pos] = token[index];
-				}
-				++pos;
 			}
 		}
 

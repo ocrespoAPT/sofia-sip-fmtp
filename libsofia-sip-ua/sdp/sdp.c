@@ -1866,6 +1866,10 @@ int sdp_rtpmap_match(sdp_rtpmap_t const *a, sdp_rtpmap_t const *b)
   return 1;
 }
 
+/**
+ * Remove all elements in the given hass, and free the content
+ * @param hash the hash to clean
+ */
 void clean_hash(su_str_token_t *hash ){
 
 	if(hash == NULL){
@@ -1883,7 +1887,14 @@ void clean_hash(su_str_token_t *hash ){
 	}
 }
 
-int cmp_value_has(const char* key,su_str_token_t *l_hash,su_str_token_t *r_hash){
+/**
+ * Compare the value in two hash tables. (no case sensitive)
+ * @param key the key to get the value to compare
+ * @param l_hash hash1 to compare
+ * @param r_hash has2 to compare
+ * @return 1 if are equals, 0 otherwise
+ */
+int cmp_value_hash(const char* key,su_str_token_t *l_hash,su_str_token_t *r_hash){
 	su_str_token_t *l_value;
 	su_str_token_t *r_value;
 
@@ -1894,39 +1905,51 @@ int cmp_value_has(const char* key,su_str_token_t *l_hash,su_str_token_t *r_hash)
 	return su_casematch(l_value->value, l_value->value);
 }
 
+/**
+ * Compare the fmtp section in a APTX encode (only the mandatory fields)
+ * @param l_hash the hash with the fmtp1 to compare
+ * @param r_hash the hash with the fmtp2 to compare
+ * @return 1 if are equals, 0 otherwise
+ */
 int sdp_cmp_fmtp_aptx(su_str_token_t *l_hash,su_str_token_t *r_hash){
 
 
-	if(cmp_value_has("variant",l_hash,r_hash)){
+	if(cmp_value_hash("variant",l_hash,r_hash)){
 		return 1;
 	}
 
-	if(cmp_value_has("bitresolution",l_hash,r_hash)){
+	if(cmp_value_hash("bitresolution",l_hash,r_hash)){
 		return 1;
 	}
 
 	return 0;
 }
 
+/**
+ * Compare the fmtp section in a mpa encode (only the mandatory fields)
+ * @param l_hash the hash with the fmtp1 to compare
+ * @param r_hash the hash with the fmtp2 to compare
+ * @return 1 if are equals, 0 otherwise
+ */
 int sdp_cmp_fmtp_mpa(su_str_token_t *l_hash,su_str_token_t *r_hash){
 
 
 	su_str_token_t *l_value;
 	su_str_token_t *r_value;
 
-	if(cmp_value_has("layer",l_hash,r_hash)){
+	if(cmp_value_hash("layer",l_hash,r_hash)){
 		return 1;
 	}
 
-	if(cmp_value_has("samplerate",l_hash,r_hash)){
+	if(cmp_value_hash("samplerate",l_hash,r_hash)){
 		return 1;
 	}
 
-	if(cmp_value_has("bitrate",l_hash,r_hash)){
+	if(cmp_value_hash("bitrate",l_hash,r_hash)){
 		return 1;
 	}
 
-	if(cmp_value_has("mode",l_hash,r_hash)){
+	if(cmp_value_hash("mode",l_hash,r_hash)){
 		return 1;
 	}
 
@@ -1934,7 +1957,13 @@ int sdp_cmp_fmtp_mpa(su_str_token_t *l_hash,su_str_token_t *r_hash){
 	return 0;
 }
 
-
+/**
+ * Compare two fmtp section
+ * @param lcmp encode info1 to compare
+ * @param rfmtp the fmtp string of the encode2 to compare
+ * @param r_hash he hash with the fmtp of the encode2 to compare
+ * @return 1 if are equals, 0 otherwise
+ */
 int sdp_cmp_fmtp(sdp_rtpmap_t const *lcmp,char *rfmtp,struct su_str_token *r_hash){
 
 	int ret = 0;
@@ -1951,14 +1980,16 @@ int sdp_cmp_fmtp(sdp_rtpmap_t const *lcmp,char *rfmtp,struct su_str_token *r_has
     	ret = 0;
     }
 	else{
-		lfmtp = su_removeSpaces(lfmtp);
+		su_removeSpaces(lfmtp);
 
 		if(su_casematch(lfmtp, rfmtp)){
 			ret = 1;
 		}
 		else{
 
-			su_stringTokenizeHash(lfmtp,";",&l_hash);
+			su_strlower(lfmtp);
+
+			su_stringTokenizeHash(lfmtp,";",'=',&l_hash);
 			if(su_casematch(lcmp->rm_encoding,"aptx")){
 
 				if(sdp_cmp_fmtp_aptx(l_hash,r_hash)){
@@ -2026,9 +2057,11 @@ sdp_rtpmap_t *sdp_rtpmap_find_matching(sdp_rtpmap_t const *list,
 
   char *rm_fmtp = su_strcpy(rm->rm_fmtp);
   if(rm_fmtp){
-	  rm_fmtp = su_removeSpaces(rm_fmtp);
+	  su_removeSpaces(rm_fmtp);
 
-	  su_stringTokenizeHash(rm_fmtp,";",&rm_hash);
+	  su_strlower(rm_fmtp);
+
+	  su_stringTokenizeHash(rm_fmtp,";",'=',&rm_hash);
   }
 
 
