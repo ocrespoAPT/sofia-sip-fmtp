@@ -2091,7 +2091,6 @@ int sdp_cmp_fmtp(sdp_rtpmap_t const *lcmp,char *rfmtp,struct su_str_token *r_has
 	char *lfmtp = su_strcpy(lcmp->rm_fmtp);
 
 	if (su_casematch(lfmtp, rfmtp)){
-    	fprintf(stderr,"both are the same \n");
     	ret = 1;
     }
 	else if(lfmtp == NULL || rfmtp == NULL){
@@ -2201,8 +2200,8 @@ sdp_rtpmap_t *sdp_rtpmap_find_matching(sdp_rtpmap_t const *list,
 		if(sdp_cmp_fmtp(list,rm_fmtp,rm_hash)){
 			fprintf(stderr,"fmtp the same!!!!! \n");
 			break;
-
 		}
+
 		continue;
     }
 
