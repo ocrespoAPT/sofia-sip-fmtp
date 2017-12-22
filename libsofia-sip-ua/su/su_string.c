@@ -527,9 +527,11 @@ char* su_strcpy(const char* source){
 		return NULL;
 	}
 
-	char* cpy_str = malloc(sizeof(char) * strlen(source));
-	strncpy(cpy_str,source,strlen(source));
-	cpy_str[strlen(source)] = '\0';
+	char* cpy_str = malloc(sizeof(char) * (strlen(source)+1));
+	if(cpy_str != NULL){
+		strncpy(cpy_str,source,strlen(source));
+		cpy_str[strlen(source)] = '\0';
+	}
 
 	return cpy_str;
 }
