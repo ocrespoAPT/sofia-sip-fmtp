@@ -1959,16 +1959,13 @@ int cmp_value_hash_if(const char* key,const char* if_value,su_str_token_t *l_has
  */
 int sdp_cmp_fmtp_aptx(su_str_token_t *l_hash,su_str_token_t *r_hash){
 
-
+    int ret = 0;
 	if(cmp_value_hash("variant",l_hash,r_hash)){
-		return 1;
+	    if(cmp_value_hash("bitresolution",l_hash,r_hash)){
+	        ret = 1;
+        }
 	}
-
-	if(cmp_value_hash("bitresolution",l_hash,r_hash)){
-		return 1;
-	}
-
-	return 0;
+	return ret;
 }
 
 /**
@@ -1978,29 +1975,28 @@ int sdp_cmp_fmtp_aptx(su_str_token_t *l_hash,su_str_token_t *r_hash){
  * @return 1 if are equals, 0 otherwise
  */
 int sdp_cmp_fmtp_mpa(su_str_token_t *l_hash,su_str_token_t *r_hash){
-
+    int ret = 1;
 
 	su_str_token_t *l_value;
 	su_str_token_t *r_value;
 
-	if(cmp_value_hash("layer",l_hash,r_hash)){
-		return 1;
+	if(!cmp_value_hash("layer",l_hash,r_hash)){
+	    ret = 0;
 	}
 
-	if(cmp_value_hash("samplerate",l_hash,r_hash)){
-		return 1;
+	if(ret && !cmp_value_hash("samplerate",l_hash,r_hash)){
+	    ret = 0;
 	}
 
-	if(cmp_value_hash("bitrate",l_hash,r_hash)){
-		return 1;
+	if(ret && !cmp_value_hash("bitrate",l_hash,r_hash)){
+	    ret = 0;
 	}
 
-	if(cmp_value_hash("mode",l_hash,r_hash)){
-		return 1;
+	if(ret && !cmp_value_hash("mode",l_hash,r_hash)){
+	    ret = 0;
 	}
 
-
-	return 0;
+	return ret;
 }
 
 /**
@@ -2010,39 +2006,40 @@ int sdp_cmp_fmtp_mpa(su_str_token_t *l_hash,su_str_token_t *r_hash){
  * @return 1 if are equals, 0 otherwise
  */
 int sdp_cmp_fmtp_mp4a(su_str_token_t *l_hash,su_str_token_t *r_hash){
+    int ret = 1;
 
 	su_str_token_t *l_value;
 	su_str_token_t *r_value;
 
-	if(cmp_value_hash("profile-level-id",l_hash,r_hash)){
-		return 1;
+	/*if(!cmp_value_hash("profile-level-id",l_hash,r_hash)){
+	    ret = 0;
+	}*/
+
+	if(ret && !cmp_value_hash("bitrate",l_hash,r_hash)){
+	    ret = 0;
 	}
 
-	if(cmp_value_hash("bitrate",l_hash,r_hash)){
-		return 1;
+	if(ret && !cmp_value_hash_if("cpresent","0",l_hash,r_hash)){
+	    ret = 0;
 	}
 
-	if(cmp_value_hash_if("cpresent","0",l_hash,r_hash)){
-		return 1;
+	if(ret && !cmp_value_hash("config",l_hash,r_hash)){
+	    ret = 0;
 	}
 
-	if(cmp_value_hash("config",l_hash,r_hash)){
-		return 1;
+	if(ret && !cmp_value_hash("MPS-profile-level-id",l_hash,r_hash)){
+	    ret = 0;
 	}
 
-	if(cmp_value_hash("MPS-profile-level-id",l_hash,r_hash)){
-		return 1;
+	if(ret && !cmp_value_hash("object",l_hash,r_hash)){
+	    ret = 0;
 	}
 
-	if(cmp_value_hash("object",l_hash,r_hash)){
-		return 1;
+	if(ret && !cmp_value_hash_if("SBR-enabled","yes",l_hash,r_hash)){
+	    ret = 0;
 	}
 
-	if(cmp_value_hash_if("SBR-enabled","yes",l_hash,r_hash)){
-		return 1;
-	}
-
-	return 0;
+	return ret;
 }
 
 /**
@@ -2051,28 +2048,33 @@ int sdp_cmp_fmtp_mp4a(su_str_token_t *l_hash,su_str_token_t *r_hash){
  * @param r_hash the hash with the fmtp2 to compare
  * @return 1 if are equals, 0 otherwise
  */
-int sdp_cmp_fmtp_mpeg4eneric(su_str_token_t *l_hash,su_str_token_t *r_hash){
+int sdp_cmp_fmtp_mpeg4generic(su_str_token_t *l_hash,su_str_token_t *r_hash){
+    int ret = 1;
 
 	su_str_token_t *l_value;
 	su_str_token_t *r_value;
 
-	if(cmp_value_hash("streamtype",l_hash,r_hash)){
-		return 1;
+	if(!cmp_value_hash("streamtype",l_hash,r_hash)){
+	    ret = 0;
 	}
 
-	if(cmp_value_hash("profile-level-id",l_hash,r_hash)){
-		return 1;
+	/*if(ret && !cmp_value_hash("profile-level-id",l_hash,r_hash)){
+	    ret = 0;
+	}*/
+
+	if(ret && !cmp_value_hash("config",l_hash,r_hash)){
+	    ret = 0;
 	}
 
-	if(cmp_value_hash("config",l_hash,r_hash)){
-		return 1;
+	if(ret && !cmp_value_hash("mode",l_hash,r_hash)){
+	    ret = 0;
 	}
 
-	if(cmp_value_hash("mode",l_hash,r_hash)){
-		return 1;
-	}
+	if(ret && !cmp_value_hash("bitrate",l_hash,r_hash)){
+	    ret = 0;
+    }
 
-	return 0;
+	return ret;
 }
 
 /**
@@ -2124,7 +2126,7 @@ int sdp_cmp_fmtp(sdp_rtpmap_t const *lcmp,char *rfmtp,struct su_str_token *r_has
 				}
 			}
 			else if (su_casematch(lcmp->rm_encoding,"mpeg4-generic")){
-				if(sdp_cmp_fmtp_mpeg4eneric(l_hash,r_hash)){
+				if(sdp_cmp_fmtp_mpeg4generic(l_hash,r_hash)){
 					ret = 1;
 				}
 			}
